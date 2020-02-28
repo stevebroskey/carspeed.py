@@ -57,12 +57,16 @@ def draw_rectangle(event,x,y,flags,param):
 # define some constants
 DISTANCE = 76  #<---- enter your distance-to-road value here
 MIN_SPEED = 0  #<---- enter the minimum speed for saving images
-SAVE_CSV = False  #<---- record the results in .csv format in carspeed_(date).csv
+#SAVE_CSV = False  #<---- record the results in .csv format in carspeed_(date).csv
+SAVE_CSV = True  #<---- record the results in .csv format in carspeed_(date).csv
+CSV_FOLDER = './data/' #<---- Folder to save the csv in - make sure it's complete with trailing slash!
 
 THRESHOLD = 15
 MIN_AREA = 175
 BLURSIZE = (15,15)
+#IMAGEWIDTH = 6400
 IMAGEWIDTH = 640
+#IMAGEHEIGHT = 4800
 IMAGEHEIGHT = 480
 RESOLUTION = [IMAGEWIDTH,IMAGEHEIGHT]
 FOV = 53.5    #<---- Field of view
@@ -107,10 +111,13 @@ base_image = None
 abs_chg = 0
 mph = 0
 secs = 0.0
-ix,iy = -1,-1
-fx,fy = -1,-1
+#ix,iy = -1,-1
+ix,iy = 0,0
+#fx,fy = -1,-1
+fx,fy = 640,480
 drawing = False
-setup_complete = False
+#setup_complete = False
+setup_complete = True
 tracking = False
 text_on_image = 'No cars'
 prompt = ''
@@ -119,19 +126,21 @@ prompt = ''
 camera = PiCamera()
 camera.resolution = RESOLUTION
 camera.framerate = FPS
-camera.vflip = True
-camera.hflip = True
+#camera.vflip = True
+camera.vflip = False
+#camera.hflip = True
+camera.hflip = False
 
 rawCapture = PiRGBArray(camera, size=camera.resolution)
 # allow the camera to warm up
 time.sleep(0.9)
 
 # create an image window and place it in the upper left corner of the screen
-cv2.namedWindow("Speed Camera")
-cv2.moveWindow("Speed Camera", 10, 40)
+#_# cv2.namedWindow("Speed Camera")
+#_# cv2.moveWindow("Speed Camera", 10, 40)
 
 # call the draw_rectangle routines when the mouse is used
-cv2.setMouseCallback('Speed Camera',draw_rectangle)
+#_# cv2.setMouseCallback('Speed Camera',draw_rectangle)
  
 # grab a reference image to use for drawing the monitored area's boundry
 camera.capture(rawCapture, format="bgr", use_video_port=True)
@@ -140,7 +149,8 @@ rawCapture.truncate(0)
 org_image = image.copy()
 
 if SAVE_CSV:
-    csvfileout = "carspeed_{}.cvs".format(datetime.datetime.now().strftime("%Y%m%d_%H%M"))
+#TODO: Fix this to use os.path.join or os.sep
+    csvfileout = CSV_FOLDER + "carspeed_{}.cvs".format(datetime.datetime.now().strftime("%Y%m%d_%H%M"))
     record_speed('Date,Day,Time,Speed,Image')
 else:
     csvfileout = ''
@@ -150,7 +160,7 @@ prompt_on_image(prompt)
  
 # wait while the user draws the monitored area's boundry
 while not setup_complete:
-    cv2.imshow("Speed Camera",image)
+    #cv2.imshow("Speed Camera",image)
  
     #wait for for c to be pressed  
     key = cv2.waitKey(1) & 0xFF
@@ -214,7 +224,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         base_image = gray.copy().astype("float")
         lastTime = timestamp
         rawCapture.truncate(0)
-        cv2.imshow("Speed Camera", image)
+        #cv2.imshow("Speed Camera", image)
   
     # compute the absolute difference between the current image and
     # base image and then turn eveything lighter gray than THRESHOLD into
@@ -298,7 +308,8 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
                         cv2.putText(image, "%.0f mph" % last_mph,
                             (cntr_x , int(IMAGEHEIGHT * 0.2)), cv2.FONT_HERSHEY_SIMPLEX, 2.00, (0, 255, 0), 3)
                         # and save the image to disk
-                        imageFilename = "car_at_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + ".jpg"
+			#TODO: fix this to have a directory variable
+                        imageFilename = "snaps/car_at_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + ".jpg"
                         # use the following image file name if you want to be able to sort the images by speed
                         #imageFilename = "car_at_%02.0f" % last_mph + "_" + datetime.datetime.now().strftime("%Y%m%d_%H%M%S") + ".jpg"
                         
@@ -337,7 +348,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         # show the frame and check for a keypress
         if SHOW_IMAGE:
             prompt_on_image(prompt)
-            cv2.imshow("Speed Camera", image)
+#_#            cv2.imshow("Speed Camera", image)
             
         # Adjust the base_image as lighting changes through the day
         if state == WAITING:
